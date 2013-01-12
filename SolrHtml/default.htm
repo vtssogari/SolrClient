@@ -1,0 +1,225 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>        
+        <title>Prototype</title>
+
+        <!-- Bootstrap styles -->
+        <link href="css/vendor/bootstrap.min.css" rel="stylesheet"/>
+        <link href="css/vendor/bootstrap-responsive.css" rel="stylesheet"/>
+        <link href="css/vendor/themes/base/jquery.ui.all.css" rel="stylesheet"/>
+
+        <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+        <!--[if lt IE 9]>
+          <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+
+        <!-- End Bootstrap styles -->
+
+        <!-- Import styles for the universal footer -->
+        <link rel="stylesheet" href="css/solr.css" type="text/css" media="screen"/>
+        <!-- This example uses jQuery's ajax() method to retrieve data from Solr -->
+        <script type="text/javascript" src="js/vendor/jquery-1.7.2.min.js"></script>
+        <script type="text/javascript" src="js/vendor/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="js/vendor/bootstrap.min.js"></script>
+        <script type="text/javascript" src="js/vendor/pubsub.js"></script>
+
+        <!-- Import JSRender -->
+        <script type="text/javascript" src="js/vendor/jsrender.js"></script>
+        <script type="text/javascript" src="js/vendor/jquery.observable.js"></script>
+        <script type="text/javascript" src="js/vendor/jquery.views.js"></script>
+
+        <script type="text/javascript" src="js/Autocomplete.js"></script>
+        <script type="text/javascript" src="js/Configuration.js"></script>
+        <script type="text/javascript" src="js/SolrJs.js"></script>
+        <script type="text/javascript" src="js/Main.js"></script>
+    </head>
+<body>
+
+
+<!-- Change Here -->
+<script id="pageTableRowTmpl" type="text/x-jsrender">
+    <tr>
+        <td  class="td_no">{{>name}}                    </td>
+        <td  class="td_no">{{>features}}                </td>
+        <td  class="td_no">{{>price}}                   </td>
+        <td  class="td_no">{{>inStock}}                 </td>
+        <td  class="td_no">{{>manu}}                    </td>
+        <td  class="td_no">{{>cat}}                     </td>
+    </tr>
+</script>
+
+<!-- Template Starts --->
+
+<script id="timeBench" type="text/x-jsrender">
+    <div class="row-fluid">
+        <div class="span12">
+            Query:{{:queryTime}}s Total:{{:totalTime}}s
+        </div>
+    </div>
+</script>
+
+<script id="breadcrumbs" type="text/x-jsrender">
+    <ul class="breadcrumb">
+            <li> Filter : </li>
+            {{if q !== '*:*' }}
+                <li>
+                    <a href="#" onclick="query(''); return false;"> [x] {{:q}}</a>
+                    <span class="divider">  </span>
+                </li>
+            {{/if}}
+            {{for fq}}
+                {{if field}}
+                <li>
+                    <a href="#" onclick="removeFilter('{{:field}}', '{{:value}}'); return false;" title="{{:field}}"> [x] {{if (value && value != null)}} {{>value}} {{else}} NA {{/if}}</a>
+                    <span class="divider">  </span>
+                </li>
+                {{/if}}
+            {{/for}}
+    </ul>
+</script>
+
+
+<script id="pagenationTmpl" type="text/x-jsrender">
+    <div class="row" style="margin-bottom:12px;">
+        <div class="span12 gradient" styel="margin:0;">
+            <div class="row-fluid">
+                <div class="span4">
+                    <div class="row-fluid">
+                        <div class="span12">
+                            &nbsp;&nbsp;
+                            {{if pagenation.showPagenatedNumber}}
+                            <strong>{{:pagenation.selectedPage}} / {{:pagenation.totalPages}}</strong> total pages
+                            {{else}}
+                            <strong>{{:pagenation.numFound}}</strong> documents
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+                <div class="span6">
+                    <div class="pagination" style="margin:0;">
+                        <ul>
+                            {{if pagenation.showPagenatedNumber}}
+                            {{if pagenation.canFirstPage}}
+                            <li class="{{:pagenation.canFirstPage ? 'first paginate_button':'disabled'}}">
+                                <a id="first" href="#" onclick="{{:pagenation.canFirstPage ? 'first();':''}} return false;">First</a>
+                            </li>
+                            {{/if}}
+                            {{if pagenation.canPrevPage}}
+                            <li class="{{:pagenation.canPrevPage ? 'previous paginate_button':'disabled'}}">
+                                <a id="previous" href="#" onclick="{{:pagenation.canPrevPage ? 'prev();':''}} return false;">Prev</a>
+                            </li>
+                            {{/if}}
+                            {{for pagenation.pageNumbers}}
+                            {{if selected}}
+                            <li class="active"><a href="#">{{:pageNumber}}</a></li>
+                            {{else}}
+                            <li><a href="#" onclick="page({{:pageNumber}}); return false;">{{:pageNumber}}</a></li>
+                            {{/if}}
+                            {{/for}}
+
+                            {{if pagenation.canNextPage}}
+                            <li class="disabled"><a href="#">...</a></li>
+                            <li class="{{:pagenation.canNextPage ? 'next paginate_button':'disabled'}}">
+                                <a id="next" href="#" onclick="{{:pagenation.canNextPage ? 'next();':''}}  return false;">Next</a>
+                            </li>
+                            {{/if}}
+
+                            {{if pagenation.canLastPage}}
+                            <li class="{{:pagenation.canLastPage ? 'last paginate_button':'disabled'}}">
+                                <a id="last" href="#" onclick="{{:pagenation.canLastPage ? 'last();':''}}  return false;">Last</a>
+                            </li>
+                            {{/if}}
+                            {{else}}
+                            <li class="{{:pagenation.canPrevPage ? 'previous paginate_button':'disabled'}}">
+                                <a id="previous2" href="#" onclick="{{:pagenation.canPrevPage ? 'prev();':''}} return false;">Prev</a>
+                            </li>
+
+                            {{if pagenation.canNextPage}}
+                            <li class="{{:pagenation.canNextPage ? 'next paginate_button':'disabled'}}">
+                                <a id="next2" href="#" onclick="{{:pagenation.canNextPage ? 'next();':''}}  return false;">Next</a>
+                            </li>
+                            {{/if}}
+                            {{/if}}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="span2">
+                    <div>
+                        <b>View:</b>
+                        <select class="pagePerView" onchange="rowsBy(this.options[this.selectedIndex].value)" >
+                            {{for viewsPerPageOptions}}
+                            <option {{:selected?'selected="true"':''}} value="{{:name}}">{{:label}}</option>
+                            {{/for}}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="resultTmpl" type="text/x-jsrender">
+<div class="row-fluid">
+    <div class="span12">
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+                <tr>              
+                    {{for fields}}      
+                    <th>{{:label}}</th>                    
+                    {{/for}}
+                </tr>
+                <tr>
+                    {{for fields}}      
+                    <td><input id="{{:name}}" style="{{:styleProperty}}"/></td>                   
+                    {{/for}}
+                </tr>
+            </thead>
+            <tbody>
+                {{for response.docs tmpl="#pageTableRowTmpl"/}}
+            </tbody>
+        </table>
+    </div>
+</div>
+</script>
+
+
+<!-- Template End --->
+
+<!-- Content Start -->
+    
+    <div class="container">
+        <div class="row">
+            <div class="span12 ">&nbsp;</div>
+        </div>
+        <div class="row">
+            <div class="span12 ">
+                <div class="input-append pull-right">
+                    <input class="span2" name="q" id="q" placeholder="Enter Search Criteria"  type="text" onkeydown="if (event.keyCode == 13) document.getElementById('btnSearch').click()">
+                    <input id="btnSearch" class="btn" type="button" onclick="solrjs.reset(); query($('#q').val()); return false;" value="Search"></input>
+                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <div id="breadcrumbCon" class="span12"></div>
+        </div>
+
+        <div class="row">
+            <div id="rightCon" class="span12">              
+            </div>
+        </div>
+        <hr/>
+      <footer>
+        <div class="row">
+            <div class="span4"><p>&copy; Your company 2012</p></div>
+            <div class="span4"><p id="searchTime"></p></div>
+            <div class="span4">company logo here</div>
+        </div>
+      </footer>
+    </div>
+
+
+</body>
+</html>
